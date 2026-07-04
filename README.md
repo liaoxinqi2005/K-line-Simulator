@@ -1,15 +1,3 @@
-[README.md](https://github.com/user-attachments/files/29661254/README.md)
----
-AIGC:
-    Label: "1"
-    ContentProducer: 001191440300708461136T1XGW3
-    ProduceID: a927e07ab7e4aabf790a89a4da89c8b9_f0e8833477b611f19641525400d9a7a1
-    ReservedCode1: bKyS8dpKqDsvnEmjexUvdGNLHjfohKMzLWS2LyLfUBz0EXfj273AOzs1JJhIdEOGSPGWxrNVQ9ZZACVEYQvelkmgD6Ov/A/QDZaRwhibQ/MEpWd06OXN6xn2hwfFvXWmuMyqgObt2unsqrbjUikV/tekdoCzFSkIlshfCMLfG8uCvWs2qqh9p6bXAk8=
-    ContentPropagator: 001191440300708461136T1XGW3
-    PropagateID: a927e07ab7e4aabf790a89a4da89c8b9_f0e8833477b611f19641525400d9a7a1
-    ReservedCode2: bKyS8dpKqDsvnEmjexUvdGNLHjfohKMzLWS2LyLfUBz0EXfj273AOzs1JJhIdEOGSPGWxrNVQ9ZZACVEYQvelkmgD6Ov/A/QDZaRwhibQ/MEpWd06OXN6xn2hwfFvXWmuMyqgObt2unsqrbjUikV/tekdoCzFSkIlshfCMLfG8uCvWs2qqh9p6bXAk8=
----
-
 # K线模拟交易系统
 
 > 基于纯前端技术实现的 K 线模拟交易系统，支持回合制推进、技术指标分析、交易策略建议。提供**浏览器版**和**桌面 EXE 版**两种使用方式。
