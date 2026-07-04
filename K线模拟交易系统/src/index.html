@@ -1,0 +1,296 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K线模拟交易</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Microsoft YaHei',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh;display:flex;justify-content:center;padding:20px}
+.container{max-width:1300px;width:100%}
+.header{display:flex;align-items:center;gap:20px;margin-bottom:16px;flex-wrap:wrap}
+.header h1{font-size:22px;color:#e94560}
+.capital-setup{display:flex;align-items:center;gap:10px;background:#16213e;padding:8px 16px;border-radius:8px;flex-wrap:wrap}
+.capital-setup label{font-size:13px;color:#ccc}
+.capital-setup input{width:120px;background:#0f3460;border:1px solid #1a4a7a;color:#fff;padding:6px 10px;border-radius:4px;font-size:14px;text-align:right}
+.capital-setup input:focus{outline:none;border-color:#e94560}
+.capital-setup button,.btn{background:#e94560;color:#fff;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;font-size:13px}
+.capital-setup button:hover,.btn:hover{background:#c73650}
+.btn:disabled{opacity:.4;cursor:default}
+.main{display:flex;gap:16px}
+.chart-area{flex:1;min-width:0}
+.chart-wrapper{background:#16213e;border-radius:8px;padding:12px;position:relative}
+#chartCanvas{width:100%;height:480px;display:block;cursor:crosshair}
+.sidebar{width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:12px}
+.panel{background:#16213e;border-radius:8px;padding:14px}
+.panel h3{font-size:14px;color:#e94560;margin-bottom:10px;border-bottom:1px solid #1a4a7a;padding-bottom:6px}
+.info-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+.info-row .label{color:#aaa}
+.info-row .value{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;color:#fff}
+.info-row .value.up{color:#4ecca3}
+.info-row .value.down{color:#e94560}
+.trade-btns{display:flex;gap:8px;margin-top:8px}
+.trade-btns button{flex:1;padding:10px;border:none;border-radius:6px;font-size:15px;font-weight:700;cursor:pointer}
+.trade-btns button:disabled{opacity:.3;cursor:default}
+.btn-buy{background:#4ecca3;color:#1a1a2e}
+.btn-buy:hover:not(:disabled){background:#3db88b}
+.btn-sell{background:#e94560;color:#fff}
+.btn-sell:hover:not(:disabled){background:#d63a52}
+.btn-next{background:#0f3460;color:#e0e0e0;width:100%;padding:10px;border:1px solid #1a4a7a;border-radius:6px;cursor:pointer;font-size:14px;margin-top:8px}
+.btn-next:hover:not(:disabled){background:#1a4a7a}
+.btn-next:disabled{opacity:.3;cursor:default}
+.qty-control{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:13px}
+.qty-control label{color:#aaa}
+.qty-control select{flex:1;background:#0f3460;color:#fff;border:1px solid #1a4a7a;padding:5px;border-radius:4px}
+.indicator-row{display:flex;gap:14px;margin-top:4px;flex-wrap:wrap}
+.indicator-row label{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;color:#ccc;user-select:none}
+.indicator-row label input{width:16px;height:16px;accent-color:#e94560;cursor:pointer}
+.indicator-row label .swatch{width:14px;height:3px;border-radius:2px;display:inline-block}
+.suggestion{background:#16213e;border-radius:8px;padding:14px;margin-top:12px;border-left:4px solid #888}
+.suggestion.buy{border-left-color:#4ecca3}
+.suggestion.sell{border-left-color:#e94560}
+.suggestion.hold{border-left-color:#f0c040}
+.suggestion .sug-title{font-size:15px;font-weight:700;margin-bottom:4px;color:#e94560}
+.suggestion .sug-reason{font-size:13px;color:#bbb;line-height:1.6}
+.suggestion .sug-indicator{font-size:12px;color:#888;margin-top:6px}
+.suggestion .sug-trades{font-size:12px;color:#999;margin-top:6px;padding-top:6px;border-top:1px solid #1a4a7a;max-height:80px;overflow-y:auto}
+.empty-suggestion{background:#16213e;border-radius:8px;padding:14px;margin-top:12px;color:#666;text-align:center;font-size:13px;border-left:4px solid #333}
+.progress-bar{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:#999}
+.progress-track{flex:1;height:4px;background:#0f3460;border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:#e94560;border-radius:2px;transition:width .3s}
+.tooltip{display:none;position:absolute;background:#0f3460;border:1px solid #2a5a8a;border-radius:4px;padding:7px 11px;font-size:13px;color:#fff;pointer-events:none;z-index:10;white-space:nowrap;font-weight:600}
+.header .perf{font-size:13px;color:#4ecca3;margin-left:auto;font-weight:600}
+@media(max-width:860px){.main{flex-direction:column}.sidebar{width:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>K线模拟交易</h1>
+<div class="capital-setup">
+<label>初始本金</label>
+<input type="number" id="initialCapital" value="100000" min="1000" step="1000">
+<button id="resetBtn">新交易</button>
+</div>
+<span class="perf" id="perfInfo"></span>
+</div>
+<div class="main">
+<div class="chart-area">
+<div class="chart-wrapper" style="position:relative">
+<canvas id="chartCanvas"></canvas>
+<div class="tooltip" id="tooltip"></div>
+</div>
+<div id="suggestionPanel" class="empty-suggestion">按 Space/→ 前进查看K线和交易建议</div>
+</div>
+<div class="sidebar">
+<div class="panel"><h3>账户</h3>
+<div class="info-row"><span class="label">可用资金</span><span class="value" id="dispBalance">100,000.00</span></div>
+<div class="info-row"><span class="label">持仓</span><span class="value" id="dispShares">0 股</span></div>
+<div class="info-row"><span class="label">均价</span><span class="value" id="dispAvgCost">—</span></div>
+<div class="info-row"><span class="label">总资产</span><span class="value" id="dispTotalAsset">100,000.00</span></div>
+<div class="info-row"><span class="label">盈亏</span><span class="value" id="dispPnL">0.00 (0.00%)</span></div>
+</div>
+<div class="panel"><h3>指标</h3>
+<div class="indicator-row">
+<label><input type="checkbox" id="showMA5" checked><span class="swatch" style="background:#ffd700"></span>MA5</label>
+<label><input type="checkbox" id="showMA20" checked><span class="swatch" style="background:#7b68ee"></span>MA20</label>
+</div>
+</div>
+<div class="panel"><h3>交易</h3>
+<div class="qty-control"><label>数量</label>
+<select id="qtySelect">
+<option value="1">1手 (100股)</option>
+<option value="5">5手 (500股)</option>
+<option value="10" selected>10手 (1000股)</option>
+<option value="all">全部可用</option>
+</select></div>
+<div class="trade-btns">
+<button class="btn-buy" id="buyBtn" disabled>买入 B</button>
+<button class="btn-sell" id="sellBtn" disabled>卖出 S</button>
+</div>
+<div id="tradeLog" style="font-size:12px;color:#888;margin-top:6px;max-height:60px;overflow-y:auto"></div>
+</div>
+<div class="panel"><h3>进度</h3>
+<div class="info-row"><span class="label">回合</span><span class="value" id="dispRound">1</span></div>
+<div class="info-row"><span class="label">图中</span><span class="value" id="dispWindowRange">K1 - K45</span></div>
+<button class="btn-next" id="nextBtn">下一根K线 (Space/→)</button>
+<div class="progress-bar">
+<span id="progressPct">0%</span>
+<div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+// ponytail: sliding window k-line simulator, 45-candle view, round summary on full history
+const W=45;
+function genData(n){
+  let d=[],p=50+Math.random()*30,tr=0;
+  for(let i=0;i<n;i++){
+    tr+=(Math.random()-0.48)*0.6;tr=Math.max(-1.2,Math.min(1.2,tr));
+    if(i&&d[i-1].c<10)tr=Math.abs(tr)*0.5+0.3;
+    if(i&&d[i-1].c>120)tr=-Math.abs(tr)*0.5-0.3;
+    const ch=tr+(Math.random()-0.5)*1.2,o=i?d[i-1].c:p,c=o+ch;
+    const hi=Math.max(o,c)+Math.random()*Math.abs(ch)*1.5+0.1;
+    const lo=Math.min(o,c)-Math.random()*Math.abs(ch)*1.5-0.1;
+    const v=Math.round((200+Math.random()*800)*(1+Math.abs(ch)*2));
+    d.push({o:+(o*100).toFixed(0)/100,h:+(hi*100).toFixed(0)/100,l:+(lo*100).toFixed(0)/100,c:+(c*100).toFixed(0)/100,vol:v});
+    p=d[i].c;}
+  return d;}
+let allData=[],initCap=1e5,vi=W,bal=1e5,shares=0,avgC=0,cPrice=0,curRound=1,roundTrades=[],lastRound=null,stepInRound=0,roundStartVi=W,fullView=false;
+const CV=document.getElementById('chartCanvas'),ctx=CV.getContext('2d'),tip=document.getElementById('tooltip');
+function sz(){const r=CV.parentElement.getBoundingClientRect();CV.width=r.width-24;CV.height=480}
+window.addEventListener('resize',()=>{sz();draw()});
+function draw(){
+  const winStart=fullView?0:Math.max(0,vi-W),data=allData.slice(winStart,vi);if(!data.length)return;
+  const CW=CV.width,H=CV.height,pt=20,pb=60,pl=55,pr=20;
+  const ch=H-pt-pb,vh=40,ph=ch-vh-12,cw=CW-pl-pr,gap=cw/data.length,bw=Math.max(2,Math.min(10,gap*0.65));
+  let hi=-Infinity,lo=Infinity;data.forEach(d=>{if(d.h>hi)hi=d.h;if(d.l<lo)lo=d.l});
+  const pad=(hi-lo)*0.06||1,ym=lo-pad,yM=hi+pad,ys=ph/(yM-ym);
+  let mV=0;data.forEach(d=>{if(d.vol>mV)mV=d.vol});mV*=1.15;
+  ctx.clearRect(0,0,CW,H);ctx.fillStyle='#16213e';ctx.fillRect(0,0,CW,H);
+  for(let i=0;i<=5;i++){const y=pt+i*ph/5;ctx.strokeStyle='#1a3a5a';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(CW-pr,y);ctx.stroke();
+    const v=yM-i*(yM-ym)/5;ctx.fillStyle='#d0d0d0';ctx.font='bold 12px monospace';ctx.textAlign='right';ctx.fillText(v.toFixed(2),pl-6,y+4)}
+  const yp=p=>pt+(yM-p)*ys;
+  const ma=(p,i)=>{if(i+1<p)return null;let s=0;for(let j=i-p+1;j<=i;j++)s+=data[j].c;return s/p};
+  const s5=document.getElementById('showMA5').checked,s20=document.getElementById('showMA20').checked;
+  data.forEach((d,i)=>{const x=pl+i*gap+gap/2,vrh=(d.vol/mV)*vh;
+    ctx.fillStyle=d.c>=d.o?'rgba(78,204,163,0.3)':'rgba(233,69,96,0.3)';
+    ctx.fillRect(x-bw/2,pt+ph+10+(vh-vrh),bw*0.6,vrh)});
+  data.forEach((d,i)=>{const x=pl+i*gap+gap/2,o=yp(d.o),c=yp(d.c),h=yp(d.h),l=yp(d.l),up=d.c>=d.o;
+    ctx.strokeStyle=up?'#4ecca3':'#e94560';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,l);ctx.lineTo(x,h);ctx.stroke();
+    ctx.fillStyle=up?'#4ecca3':'#e94560';const yy=Math.min(o,c),hh=Math.max(o,c)-yy||1;ctx.fillRect(x-bw/2,yy,bw,hh)});
+  [s5?5:null,s20?20:null].filter(Boolean).forEach(p=>{ctx.strokeStyle=p===5?'#ffd700':'#7b68ee';ctx.lineWidth=2;ctx.setLineDash(p===20?[5,4]:[]);
+    ctx.beginPath();let ok=0;data.forEach((d,i)=>{const v=ma(p,i);if(v==null)return;const x=pl+i*gap+gap/2,y=yp(v);ok?ctx.lineTo(x,y):(ctx.moveTo(x,y),ok=1)});ctx.stroke();ctx.setLineDash([])});
+  ctx.font='bold 12px sans-serif';let lx=CW-98;
+  if(s5){ctx.fillStyle='#ffd700';ctx.fillRect(lx,pt+4,16,3);ctx.fillText('MA5',lx+20,pt+8);lx-=50}
+  if(s20){ctx.fillStyle='#7b68ee';ctx.fillRect(lx,pt+4,16,3);ctx.fillText('MA20',lx+20,pt+8)}
+  ctx.fillStyle='#d0d0d0';ctx.font='bold 11px sans-serif';ctx.textAlign='center';
+  const step=Math.max(1,~~(data.length/14));
+  for(let i=0;i<data.length;i+=step){ctx.fillText('K'+(winStart+i+1),pl+i*gap+gap/2,H-10)}
+  const lc=data[data.length-1].c,ly=yp(lc);
+  ctx.strokeStyle='#ff4466';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(pl,ly);ctx.lineTo(CW-pr,ly);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#ff4466';ctx.font='bold 13px monospace';ctx.textAlign='left';ctx.fillText(lc.toFixed(2),CW-pr+4,ly-2);
+  ctx.beginPath();ctx.arc(CW-pr,ly,4,0,Math.PI*2);ctx.fillStyle='#ff4466';ctx.fill();}
+CV.addEventListener('mousemove',e=>{
+  const winStart=fullView?0:Math.max(0,vi-W),data=allData.slice(winStart,vi);if(!data.length){tip.style.display='none';return}
+  const rect=CV.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  const CW=CV.width,pl=55,pr=20,cw=CW-pl-pr,gap=cw/data.length;
+  const idx=Math.round((mx-pl)/gap);if(idx<0||idx>=data.length){tip.style.display='none';return}
+  const d=data[idx],x=pl+idx*gap+gap/2;
+  const bw=Math.max(2,Math.min(10,gap*0.65));
+  if(Math.abs(mx-x)>bw+4||my<20||my>460){tip.style.display='none';return}
+  tip.style.display='block';const up=d.c>=d.o;
+  tip.innerHTML='K'+(winStart+idx+1)+'  开:'+d.o.toFixed(2)+'  高:'+d.h.toFixed(2)+'  <span style="color:'+(up?'#4ecca3':'#e94560')+'">低:'+d.l.toFixed(2)+'  收:'+d.c.toFixed(2)+'</span>  '+(up?'<span style="color:#4ecca3">↑</span>':'<span style="color:#e94560">↓</span>')+'  量:'+d.vol.toLocaleString();
+  let tx=Math.min(e.clientX-rect.left+12,CW.width-220),ty=Math.min(e.clientY-rect.top-44,480-52);
+  if(tx<0)tx=5;if(ty<0)ty=5;tip.style.left=tx+'px';tip.style.top=ty+'px'});
+CV.addEventListener('mouseleave',()=>tip.style.display='none');
+function maVal(d,p,i){if(i===void 0)i=d.length-1;if(i+1<p)return null;let s=0;for(let j=i-p+1;j<=i;j++)s+=d[j].c;return s/p}
+function analyze(d){
+  if(d.length<20)return{a:'hold',s:'待定',r:'数据不足',b:0,ss:0,sl:'——'};
+  const c=d[d.length-1],ma5=maVal(d,5),ma20=maVal(d,20);
+  if(ma5===null||ma20===null)return{a:'hold',s:'待定',r:'计算中',b:0,ss:0,sl:'——'};
+  let r=[],b=0,ss=0;
+  if(ma5>ma20*1.02){b+=2;r.push('MA5在MA20上方，短多')}else if(ma5<ma20*0.98){ss+=2;r.push('MA5在MA20下方，短空')}else{r.push('均线粘合')}
+  const m5p=maVal(d,5,d.length-2);if(m5p!==null&&ma5>m5p){b++;r.push('MA5上行')}else if(m5p!==null&&ma5<m5p){ss++;r.push('MA5下行')}
+  if(c.c>ma5*1.03){b++;r.push('收盘偏强')}else if(c.c<ma5*0.97){ss++;r.push('收盘偏弱')}else{r.push('价格震荡')}
+  const body=Math.abs(c.c-c.o),range=c.h-c.l,bull=c.c>c.o;
+  const p=d[d.length-2],pBody=Math.abs(p.c-p.o);
+  if(bull&&body>range*.6&&body>pBody*1.2){b++;r.push('放量阳线')}
+  if(!bull&&body>range*.6&&body>pBody*1.2){ss++;r.push('放量阴线')}
+  const avgV=d.slice(-10).reduce((s,x)=>s+x.vol,0)/10;
+  if(c.vol>avgV*1.5){bull?b++:ss++;r.push(bull?'量价配合':'量价背离')}
+  const rH=Math.max(...d.slice(-10).map(x=>x.h)),rL=Math.min(...d.slice(-10).map(x=>x.l));
+  if(c.c>rH*.98){b++;r.push('近10日高点')}if(c.c<rL*1.02){ss++;r.push('近10日低点')}
+  const chg5=c.c/d[d.length-6].c-1;if(chg5<-0.06){b++;r.push('超卖反弹')}else if(chg5>0.06){ss++;r.push('超买回调')}
+  const hp=shares>0,pc=hp?(cPrice/avgC-1)*100:0;
+  let a,sl='——';
+  if(b>ss+1&&!hp){a='buy';sl=(c.c*0.95).toFixed(2);r.push('建议止损 '+sl)}
+  else if(ss>b+1&&hp){a='sell';r.push('持仓盈亏 '+(pc>=0?'+':'')+pc.toFixed(1)+'%')}
+  else if(ss>b+1&&!hp){a='hold';r.push('空头明显，不入场')}
+  else if(b>ss+1&&hp){a='hold';sl=(c.c*0.93).toFixed(2);r.push('移动止损 '+sl)}
+  else{if(hp){a='hold';r.push('信号混杂，维持仓位')}else{a='hold';r.push('信号不明，等待时机')}}
+  return{a,sl,s:(a==='buy'?'买入':a==='sell'?'卖出':'观望'),r:r.join('；'),b,ss}}
+function updUI(){
+  const total=bal+shares*cPrice,pnl=shares>0?(cPrice-avgC)*shares:0,pp=shares>0&&avgC>0?(cPrice/avgC-1)*100:0;
+  document.getElementById('dispBalance').textContent=bal.toLocaleString('en',{minimumFractionDigits:2});
+  document.getElementById('dispShares').textContent=shares+' 股';
+  document.getElementById('dispAvgCost').textContent=shares>0?avgC.toFixed(2):'——';
+  document.getElementById('dispTotalAsset').textContent=total.toLocaleString('en',{minimumFractionDigits:2});
+  const pe=document.getElementById('dispPnL');pe.textContent=(pnl>=0?'+':'')+pnl.toFixed(2)+' ('+(pp>=0?'+':'')+pp.toFixed(2)+'%)';pe.className='value'+(pnl>=0?' up':' down');
+  document.getElementById('dispRound').textContent=curRound;
+  const ws=Math.max(0,vi-W);
+  document.getElementById('dispWindowRange').textContent=fullView?'K1 - K'+vi+' (全览)':'K'+(ws+1)+' - K'+vi;
+  const pct=allData.length>0?vi/allData.length*100:0;
+  document.getElementById('progressPct').textContent=Math.round(pct)+'%';document.getElementById('progressFill').style.width=pct+'%';
+  const pnlTotal=total-initCap,totalPct=initCap>0?pnlTotal/initCap*100:0;
+  document.getElementById('perfInfo').textContent=pnlTotal!==0?(pnlTotal>=0?'+':'')+pnlTotal.toFixed(2)+' ('+(totalPct>=0?'+':'')+totalPct.toFixed(2)+'%)':'';
+  const ended=vi>=allData.length;document.getElementById('nextBtn').disabled=ended;
+  document.getElementById('buyBtn').disabled=!(bal>=cPrice*100&&!ended);document.getElementById('sellBtn').disabled=!(shares>0&&!ended);}
+function showSug(){
+  const e=document.getElementById('suggestionPanel');
+  const d=allData.slice(0,vi);
+  if(d.length<5){e.className='empty-suggestion';e.innerHTML='数据不足，等待更多K线...';return}
+  if(vi>=allData.length&&lastRound){
+    const lr=lastRound;
+    const total=bal+shares*cPrice,pnlTotal=total-initCap,ppTotal=initCap>0?pnlTotal/initCap*100:0;
+    const sp=allData[Math.max(0,lr.startIdx-1)].c,ep=allData[lr.endIdx-1].c,chg=ep/sp-1;
+    const tHtml=lr.trades.length?lr.trades.map(t=>{const p=t.pnl||0;return '<div '+(t.a==='BUY'?'style="color:#4ecca3"':'style="color:#e94560"')+'>'+(t.a==='BUY'?'买入 ':'卖出 ')+t.q+'股 @ '+t.p.toFixed(2)+(t.a==='SELL'?' <span>'+(p>=0?'+':'')+p.toFixed(2)+'</span>':'')+'</div>'}).join(''):'<div style="color:#555">本回合无交易</div>';
+    const s=d.length>=20?analyze(d):{a:'hold',r:'数据尚不充足',b:0,ss:0};
+    e.className='suggestion hold';
+    const bars=(c,n)=>{let r='';for(let i=0;i<5;i++)r+=i<c?'<span style="color:'+(n==='b'?'#4ecca3':'#e94560')+'">●</span>':'<span style="color:#333">●</span>';return r};
+    const rPnl=lr.trades.reduce((s,t)=>s+(t.pnl||0),0);
+    e.innerHTML='<div class="sug-title">全部回合结束</div>'+
+      '<div class="sug-reason">最后回合K线 '+(lr.startIdx)+' - '+lr.endIdx+'｜开盘 '+sp.toFixed(2)+' → 收盘 '+ep.toFixed(2)+' ('+(chg>=0?'+':'')+(chg*100).toFixed(2)+'%)<br>'+
+      '交易: '+lr.trades.length+' 笔 | 净利润: '+(rPnl>=0?'+':'')+rPnl.toFixed(2)+' | 总盈亏: '+(pnlTotal>=0?'+':'')+pnlTotal.toFixed(2)+' ('+(ppTotal>=0?'+':'')+ppTotal.toFixed(2)+'%)<br><br>'+
+      '<strong>最终结算</strong>：总资产 '+total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')+'</div>'+
+      '<div class="sug-trades">'+tHtml+'</div>'+
+      '<div class="sug-indicator">'+s.r+'</div>'+
+      '<div class="sug-indicator">建议: '+s.s+' ｜多头 '+bars(s.b,'b')+'  空头 '+bars(s.ss,'s')+'</div>';
+    return}
+  const s=analyze(d);e.className='suggestion '+s.a;
+  const bars=(c,n)=>{let r='';for(let i=0;i<5;i++)r+=i<c?'<span style="color:'+(n==='b'?'#4ecca3':'#e94560')+'">●</span>':'<span style="color:#333">●</span>';return r};
+  e.innerHTML='<div class="sug-title">'+(s.a==='buy'?'买入 (看多)':s.a==='sell'?'卖出 (看空)':'观望')+'</div>'+
+    '<div class="sug-reason">'+s.r+'</div>'+
+    '<div class="sug-indicator">多头 '+bars(s.b,'b')+'  空头 '+bars(s.ss,'s')+'</div>';}
+function getQty(){const v=document.getElementById('qtySelect').value;return v==='all'?-1:parseInt(v)*100}
+function buy(){
+  const q=getQty(),mq=Math.floor(bal/cPrice/100)*100;if(mq<100){log('余额不足');return}
+  const n=q===-1?mq:Math.min(q,mq),cost=n*cPrice,tc=shares*avgC+cost;shares+=n;bal-=cost;avgC=shares>0?tc/shares:0;
+  roundTrades.push({a:'BUY',q:n,p:cPrice});log('买入 '+n+'股 @ '+cPrice.toFixed(2));updUI()}
+function sell(){
+  if(shares<=0){log('无持仓');return}const q=getQty(),n=q===-1?shares:Math.min(q,shares),rev=n*cPrice,pl=(cPrice-avgC)*n;
+  shares-=n;bal+=rev;if(!shares)avgC=0;
+  roundTrades.push({a:'SELL',q:n,p:cPrice,pnl:pl});log('卖出 '+n+'股 @ '+cPrice.toFixed(2)+(pl>=0?' +':' ')+pl.toFixed(2));updUI()}
+function log(m){const e=document.getElementById('tradeLog');e.innerHTML=m+'<br>'+e.innerHTML}
+function nextCandle(){
+  if(vi>=allData.length)return;
+  fullView=false;  // back to windowed mode on any advance
+  vi++;cPrice=allData[vi-1].c;stepInRound++;
+  const isRoundEnd=stepInRound>=W||vi>=allData.length;
+  if(isRoundEnd){
+    lastRound={round:curRound,startIdx:roundStartVi,endIdx:vi,trades:roundTrades.slice()};
+    stepInRound=0;roundTrades=[];curRound++;roundStartVi=vi;}
+  draw();updUI();showSug();
+  if(vi>=allData.length){fullView=true;draw();updUI();showSug();}
+}
+function reset(){
+  const inp=document.getElementById('initialCapital');let cap=parseFloat(inp.value);if(isNaN(cap)||cap<1e3)cap=1e5;inp.value=cap;
+  allData=genData(300);vi=W;bal=cap;initCap=cap;
+  curRound=1;roundTrades=[];lastRound=null;stepInRound=0;roundStartVi=W;fullView=false;
+  sz();draw();updUI();showSug();
+  document.getElementById('tradeLog').innerHTML=''}
+document.getElementById('resetBtn').addEventListener('click',reset);
+document.getElementById('buyBtn').addEventListener('click',buy);
+document.getElementById('sellBtn').addEventListener('click',sell);
+document.getElementById('nextBtn').addEventListener('click',nextCandle);
+['showMA5','showMA20'].forEach(id=>document.getElementById(id).addEventListener('change',draw));
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(vi<allData.length)nextCandle()}
+  if((e.key==='b'||e.key==='B')&&!document.getElementById('buyBtn').disabled)buy();
+  if((e.key==='s'||e.key==='S')&&!document.getElementById('sellBtn').disabled)sell()});
+sz();reset();
+</script>
+</body>
+</html>

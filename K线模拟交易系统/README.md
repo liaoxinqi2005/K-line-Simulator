@@ -1,0 +1,258 @@
+---
+AIGC:
+    Label: "1"
+    ContentProducer: 001191440300708461136T1XGW3
+    ProduceID: a927e07ab7e4aabf790a89a4da89c8b9_f0e8833477b611f19641525400d9a7a1
+    ReservedCode1: bKyS8dpKqDsvnEmjexUvdGNLHjfohKMzLWS2LyLfUBz0EXfj273AOzs1JJhIdEOGSPGWxrNVQ9ZZACVEYQvelkmgD6Ov/A/QDZaRwhibQ/MEpWd06OXN6xn2hwfFvXWmuMyqgObt2unsqrbjUikV/tekdoCzFSkIlshfCMLfG8uCvWs2qqh9p6bXAk8=
+    ContentPropagator: 001191440300708461136T1XGW3
+    PropagateID: a927e07ab7e4aabf790a89a4da89c8b9_f0e8833477b611f19641525400d9a7a1
+    ReservedCode2: bKyS8dpKqDsvnEmjexUvdGNLHjfohKMzLWS2LyLfUBz0EXfj273AOzs1JJhIdEOGSPGWxrNVQ9ZZACVEYQvelkmgD6Ov/A/QDZaRwhibQ/MEpWd06OXN6xn2hwfFvXWmuMyqgObt2unsqrbjUikV/tekdoCzFSkIlshfCMLfG8uCvWs2qqh9p6bXAk8=
+---
+
+# K线模拟交易系统
+
+> 基于纯前端技术实现的 K 线模拟交易系统，支持回合制推进、技术指标分析、交易策略建议。提供**浏览器版**和**桌面 EXE 版**两种使用方式。
+
+---
+
+## 目录
+
+- [功能特性](#功能特性)
+- [版本说明](#版本说明)
+- [技术栈](#技术栈)
+- [快速开始](#快速开始)
+- [构建桌面 EXE](#构建桌面-exe)
+- [操作指南](#操作指南)
+- [项目结构](#项目结构)
+- [兼容性说明](#兼容性说明)
+- [截图说明](#截图说明)
+- [许可证](#许可证)
+
+---
+
+## 功能特性
+
+### 核心功能
+
+| 功能 | 描述 |
+|------|------|
+| **K 线图渲染** | Canvas 原生绘制，支持阳线/阴线、最高/最低价、成交量柱状图 |
+| **技术指标** | MA5（5日均线，黄色）、MA20（20日均线，紫色虚线）、成交量叠加 |
+| **回合制推进** | 每 45 根 K 线为一个交易回合，支持 Space/→ 逐根推进 |
+| **模拟交易** | 买入 / 卖出操作，可调交易手数（1/5/10/20手或全仓） |
+| **账户管理** | 实时显示可用资金、持仓数量、均价、总资产、浮动盈亏 |
+| **智能分析** | 多因子技术分析引擎，综合 MA 交叉、斜率、K线形态、量价关系等 |
+| **交易建议** | 买入/卖出/观望信号 + 信号强度可视 + 详细分析理由 |
+| **统计面板** | 胜率、总盈亏、交易笔数等完整交易统计 |
+| **全览模式** | 按 F 键切换到全局视图，纵览全部 K 线走势 |
+| **键盘快捷键** | Space/→ 前进、B 买入、S 卖出、F 全览 |
+
+### v2.0 增强特性
+
+- 深色主题 UI（GitHub Dark 风格）
+- 改进的面板布局和信息展示
+- Toast 消息提示系统
+- 交易统计弹窗（买入/卖出明细、胜率、总盈亏）
+- 回合进度条与回合编号显示
+- 响应式布局（支持窄屏适配）
+- 成交量叠加显示（可开关）
+- 当前价格水平线标注
+
+---
+
+## 版本说明
+
+| 版本 | 文件 | 说明 |
+|------|------|------|
+| **v1.0（原始版）** | `src/index.html` | 基础 K 线模拟交易系统，297 行纯前端代码 |
+| **v2.0（增强版）** | `src/enhanced-v2.html` | 深色 UI + 增强功能，656 行，推荐使用 |
+
+> **浏览器使用**：直接用浏览器打开 `src/enhanced-v2.html` 即可运行。
+> **桌面版使用**：桌面版内置的是增强版 UI，通过 pywebview 包装为原生窗口。
+
+---
+
+## 技术栈
+
+### 前端
+
+| 技术 | 用途 |
+|------|------|
+| **HTML5** | 页面结构 |
+| **CSS3** | 深色主题样式、响应式布局 |
+| **Canvas API** | K 线图渲染引擎 |
+| **原生 JavaScript** | 无任何第三方 JS 库，零依赖 |
+
+### 桌面包装
+
+| 技术 | 用途 |
+|------|------|
+| **Python 3.8+** | 桌面启动器语言 |
+| **pywebview 4.x** | 将 HTML 包装为原生桌面窗口 |
+| **Edge WebView2** | Windows 原生渲染引擎（Win10/11 预装） |
+| **PyInstaller 6.x** | 打包为独立 EXE 文件 |
+
+---
+
+## 快速开始
+
+### 方式一：浏览器运行（推荐，零依赖）
+
+直接双击打开 `src/enhanced-v2.html`（或 `src/index.html`），无需任何安装。
+
+### 方式二：Python 桌面应用
+
+```bash
+# 1. 安装依赖
+pip install -r requirements.txt
+
+# 2. 启动桌面应用
+python desktop/app.py
+```
+
+> 如果无法使用 WebView2（如 Win7 未安装），程序会自动降级为浏览器模式。
+
+### 方式三：使用预构建 EXE
+
+直接运行 `dist/K线模拟交易系统.exe`，开箱即用。
+
+---
+
+## 构建桌面 EXE
+
+### 环境要求
+
+- Windows 7 SP1 x64 / Windows 10 x64 / Windows 11 x64
+- Python 3.8+（Win7 建议使用 Python 3.8.10）
+- Microsoft Edge WebView2 Runtime（Win10/11 预装，Win7 需手动安装）
+
+### 一键构建（推荐）
+
+```bash
+# Windows 命令提示符
+build.bat
+```
+
+### 手动构建
+
+```bash
+# 1. 安装依赖
+pip install -r requirements.txt
+
+# 2. 执行构建
+python build.py
+
+# 可选参数
+python build.py --clean     # 清理缓存后构建
+python build.py --console   # 构建带控制台窗口的调试版本
+```
+
+构建完成后，EXE 文件位于 `dist/K线模拟交易系统.exe`。
+
+---
+
+## 操作指南
+
+### 基本流程
+
+1. 打开系统，设置初始本金（默认 ¥100,000）
+2. 观察 K 线图和技术指标
+3. 参考右侧交易建议面板判断买入/卖出时机
+4. 使用交易面板执行操作：
+   - 选择交易手数（1手=100股、5手、10手、20手或全仓）
+   - 点击"买入(B)"或"卖出(S)"按钮
+5. 点击"下一根K线(Space/→)"推进行情
+6. 每 45 根 K 线为一个交易回合，回合结束后自动统计
+7. 全部 300 根 K 线走完后系统显示最终结算
+
+### 键盘快捷键
+
+| 快捷键 | 功能 |
+|--------|------|
+| `Space` / `→` | 下一根 K 线 |
+| `B` | 买入 |
+| `S` | 卖出 |
+| `F` | 切换全览模式 |
+
+### 技术指标说明
+
+- **MA5**（黄色）：5 日移动平均线，反映短期趋势
+- **MA20**（紫色虚线）：20 日移动平均线，反映中期趋势
+- **成交量柱状图**：绿色为阳线成交量，红色为阴线成交量
+
+### 分析信号判断逻辑
+
+综合以下因子生成交易建议：
+
+- MA5 与 MA20 的交叉关系
+- MA5 斜率方向
+- 收盘价与 MA5 的关系
+- K 线实体形态（长阳/长阴）
+- 近 10 日价格高低点位置
+- 短期超买超卖状态
+- 量价配合关系
+
+---
+
+## 项目结构
+
+```
+K线模拟交易系统/
+├── README.md                 # 项目文档
+├── LICENSE                   # MIT 许可证
+├── .gitignore               # Git 忽略规则
+├── requirements.txt         # Python 依赖
+├── build.py                 # Python 构建脚本
+├── build.bat                # Windows 一键构建脚本
+├── src/                     # 前端源码
+│   ├── index.html           # v1.0 原始版 K 线模拟交易系统
+│   └── enhanced-v2.html     # v2.0 增强版 UI
+└── desktop/                 # 桌面包装源码
+    ├── app.py               # pywebview 桌面启动器（主入口）
+    ├── launcher.py          # 浏览器降级启动器
+    └── kline.spec           # PyInstaller 打包配置
+```
+
+---
+
+## 兼容性说明
+
+### 浏览器兼容性
+
+| 浏览器 | 兼容性 |
+|--------|--------|
+| Google Chrome 90+ | 完全支持 |
+| Microsoft Edge 90+ | 完全支持 |
+| Firefox 90+ | 完全支持 |
+| Safari 14+ | 完全支持 |
+
+### Windows 桌面兼容性
+
+| 系统 | 兼容情况 | 说明 |
+|------|----------|------|
+| **Windows 11 x64** | 开箱即用 | WebView2 预装，原生窗口体验 |
+| **Windows 10 x64** | 开箱即用 | WebView2 预装，原生窗口体验 |
+| **Windows 7 SP1 x64** | 需额外安装 | 需安装 [Edge WebView2 Runtime](https://go.microsoft.com/fwlink/p/?LinkId=2124703)，否则自动降级为浏览器模式 |
+
+> **降级机制**：当 WebView2 不可用时，桌面应用会自动启动本地 HTTP 服务器并使用默认浏览器打开，同时弹出提示引导安装 WebView2。
+
+---
+
+## 截图说明
+
+由于本项目为纯前端 K 线模拟交易系统，无截图文件包含在仓库中。建议在 GitHub 仓库中添加以下截图：
+
+1. **主界面截图**：展示 K 线图、技术指标、交易面板的完整布局
+2. **交易操作截图**：展示买入/卖出后的 Toast 提示和账户变化
+3. **统计面板截图**：展示交易统计弹窗内容
+4. **全览模式截图**：展示 F 键切换后的全局 K 线视图
+5. **分析建议截图**：展示智能分析面板的多空信号和理由
+
+截图可放置于 `screenshots/` 目录并在 README 中引用。
+
+---
+
+## 许可证
+
+本项目基于 [MIT License](LICENSE) 开源发布。
+*（内容由AI生成，仅供参考）*
