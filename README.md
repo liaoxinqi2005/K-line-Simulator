@@ -103,7 +103,7 @@ python desktop/app.py
 
 ### 方式三：使用预构建 EXE
 
-直接运行 `dist/K线模拟交易系统.exe`，开箱即用。
+直接运行 `dist/K-line-Simulator.exe`，开箱即用。
 
 ---
 
